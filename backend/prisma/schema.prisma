@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+  STAFF
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  fullName     String       @map("full_name") @db.VarChar(100)
+  email        String       @unique @db.VarChar(254)
+  passwordHash String       @map("password_hash") @db.VarChar(100)
+  role         Role         @default(STUDENT)
+  createdAt    DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
+  enrollments  Enrollment[]
+  @@map("users")
+}
+
+model Course {
+  id               Int          @id @default(autoincrement())
+  title            String       @db.VarChar(200)
+  category         String       @db.VarChar(100)
+  instructor       String       @db.VarChar(100)
+  shortDescription String       @map("short_description") @db.VarChar(300)
+  description      String       @db.Text
+  tuitionVnd       Int          @map("tuition_vnd")
+  capacity         Int
+  enrolledCount    Int          @default(0) @map("enrolled_count")
+  isPublished      Boolean      @default(true) @map("is_published")
+  createdAt        DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime     @updatedAt @map("updated_at") @db.DateTime(3)
+  enrollments      Enrollment[]
+  @@index([isPublished, category])
+  @@map("courses")
+}
+
+model Enrollment {
+  id         Int              @id @default(autoincrement())
+  userId     Int              @map("user_id")
+  courseId   Int              @map("course_id")
+  status     EnrollmentStatus @default(ENROLLED)
+  enrolledAt DateTime         @default(now()) @map("enrolled_at") @db.DateTime(3)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  course     Course           @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  @@unique([userId, courseId])
+  @@index([courseId, enrolledAt])
+  @@index([userId, enrolledAt])
+  @@map("enrollments")
+}
