@@ -4,6 +4,8 @@
 
 **Công nghệ:** React + Vite + TypeScript, Express, Prisma, MySQL, JWT và bcrypt.
 
+**Frontend demo:** [Xem danh sách khóa học](https://pks-course-portal.2351010203thuan.workers.dev/courses).
+
 ERD: [Sơ đồ database](docs/erd.md).
 
 
