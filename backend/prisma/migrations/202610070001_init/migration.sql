@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE `users` (
-    `id` CHAR(36) NOT NULL,
+    `id` INT NOT NULL AUTO_INCREMENT,
     `full_name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(254) NOT NULL,
     `password_hash` VARCHAR(100) NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE `users` (
 
 -- CreateTable
 CREATE TABLE `courses` (
-    `id` CHAR(36) NOT NULL,
+    `id` INT NOT NULL AUTO_INCREMENT,
     `title` VARCHAR(200) NOT NULL,
     `category` VARCHAR(100) NOT NULL,
     `instructor` VARCHAR(100) NOT NULL,
@@ -33,9 +33,9 @@ CREATE TABLE `courses` (
 
 -- CreateTable
 CREATE TABLE `enrollments` (
-    `id` CHAR(36) NOT NULL,
-    `user_id` CHAR(36) NOT NULL,
-    `course_id` CHAR(36) NOT NULL,
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `user_id` INT NOT NULL,
+    `course_id` INT NOT NULL,
     `status` ENUM('ENROLLED') NOT NULL DEFAULT 'ENROLLED',
     `enrolled_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
