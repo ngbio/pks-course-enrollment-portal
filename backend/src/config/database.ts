@@ -22,7 +22,18 @@ const fields = z.object({
 
 export function databaseUrl(env: NodeJS.ProcessEnv = process.env): string {
   // Explicit URLs take precedence so isolated test URLs never use local DB_*.
-  if (env.DATABASE_URL) return env.DATABASE_URL;
+  if (env.DATABASE_URL) {
+    const url = new URL(env.DATABASE_URL);
+    // Aiven's REQUIRED mode encrypts traffic without requiring a local CA file.
+    if (url.searchParams.get('ssl-mode')?.toUpperCase() === 'REQUIRED') {
+      url.searchParams.delete('ssl-mode');
+      if (!url.searchParams.has('sslaccept')) {
+        url.searchParams.set('sslaccept', 'accept_invalid_certs');
+      }
+      return url.toString();
+    }
+    return env.DATABASE_URL;
+  }
   const result = fields.safeParse(env);
   if (!result.success) {
     throw new Error(

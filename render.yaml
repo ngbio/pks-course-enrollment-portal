@@ -23,8 +23,6 @@ services:
         sync: false
       - key: DB_NAME
         value: pks_portal
-      - key: DB_SSL_CA
-        value: /etc/secrets/aiven-ca.pem
       - key: DB_CONNECTION_LIMIT
         value: "5"
       - key: ALLOWED_ORIGINS
@@ -37,5 +35,5 @@ services:
         value: "1"
       - key: JWT_TTL_SECONDS
         value: "7200"
-# Add aiven-ca.pem under Render > Environment > Secret Files before deploying.
-# DB_SSL_CA enables verified TLS. DATABASE_URL may be used instead of DB_*.
+# DATABASE_URL may use Aiven's ?ssl-mode=REQUIRED without a local CA file.
+# Optional DB_SSL_CA enables certificate verification when using DB_*.

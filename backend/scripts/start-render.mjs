@@ -11,12 +11,7 @@ if (config.NODE_ENV !== 'production' || !config.EDGE_PROXY_SECRET) {
 }
 const database = new URL(config.DATABASE_URL);
 const certificate = database.searchParams.get('sslcert');
-if (database.searchParams.get('sslaccept') !== 'strict' || !certificate) {
-  throw new Error(
-    'Aiven requires sslaccept=strict and sslcert in DATABASE_URL',
-  );
-}
-accessSync(certificate);
+if (certificate) accessSync(certificate);
 
 // Free Render services do not have a pre-deploy command. Run deploy (never reset)
 // at startup for this single-instance demo, using a fresh database for the baseline.

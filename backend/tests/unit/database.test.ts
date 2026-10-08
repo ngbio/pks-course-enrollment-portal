@@ -10,6 +10,29 @@ const fields = {
 };
 
 describe('Database environment fields', () => {
+  it('converts Aiven REQUIRED mode to Prisma TLS without a CA file', () => {
+    const url = new URL(
+      databaseUrl({
+        DATABASE_URL:
+          'mysql://user:password@mysql.example.test:24031/defaultdb?ssl-mode=REQUIRED&connection_limit=5',
+      }),
+    );
+    expect(url.searchParams.has('ssl-mode')).toBe(false);
+    expect(url.searchParams.get('sslaccept')).toBe('accept_invalid_certs');
+    expect(url.searchParams.has('sslcert')).toBe(false);
+    expect(url.searchParams.get('connection_limit')).toBe('5');
+    expect(url.pathname).toBe('/defaultdb');
+  });
+  it('preserves explicit certificate verification with Aiven REQUIRED mode', () => {
+    const url = new URL(
+      databaseUrl({
+        DATABASE_URL:
+          'mysql://user:password@mysql.example.test/defaultdb?ssl-mode=REQUIRED&sslaccept=strict&sslcert=/etc/secrets/ca.pem',
+      }),
+    );
+    expect(url.searchParams.get('sslaccept')).toBe('strict');
+    expect(url.searchParams.get('sslcert')).toBe('/etc/secrets/ca.pem');
+  });
   it('encodes credentials and CA paths without changing their values', () => {
     const url = new URL(
       databaseUrl({ ...fields, DB_SSL_CA: 'E:/Private CA/ca.pem' }),
