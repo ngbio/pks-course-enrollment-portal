@@ -9,6 +9,7 @@ import { errorHandler } from './middleware/error-handler.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { courseRoutes } from './modules/courses/course.routes.js';
 import { enrollmentRoutes } from './modules/enrollments/enrollment.routes.js';
+import { edgeProxy } from './middleware/edge-proxy.js';
 
 export function createApp(db: PrismaClient, config: Config) {
   const app = express();
@@ -16,6 +17,7 @@ export function createApp(db: PrismaClient, config: Config) {
   app.set('query parser', 'simple');
   app.set('trust proxy', config.TRUST_PROXY_HOPS);
   app.use(helmet());
+  app.use(edgeProxy(config));
   app.use(cors({ origin: config.ALLOWED_ORIGINS, credentials: true }));
   app.use((_req, res, next) => {
     res.setHeader('Cache-Control', 'no-store');

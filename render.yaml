@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: pks-course-api
+    runtime: node
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci --include=dev && npm run db:generate && npm run build
+    startCommand: npm run start:render
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 24.11.1
+      - key: NODE_ENV
+        value: production
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: pks_portal
+      - key: DB_SSL_CA
+        value: /etc/secrets/aiven-ca.pem
+      - key: DB_CONNECTION_LIMIT
+        value: "5"
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: EDGE_PROXY_SECRET
+        generateValue: true
+      - key: TRUST_PROXY_HOPS
+        value: "1"
+      - key: JWT_TTL_SECONDS
+        value: "7200"
+# Add aiven-ca.pem under Render > Environment > Secret Files before deploying.
+# DB_SSL_CA enables verified TLS. DATABASE_URL may be used instead of DB_*.
