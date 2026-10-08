@@ -3,7 +3,7 @@
 ```mermaid
 erDiagram
     USERS ||--o{ ENROLLMENTS : registers
-    COURSES ||--o{ ENROLLMENTS : contains
+    COURSES ||--o{ ENROLLMENTS : has
     USERS {
         int id PK
         varchar100 full_name
