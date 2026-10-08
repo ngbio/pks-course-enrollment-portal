@@ -2,7 +2,10 @@ import 'dotenv/config';
 import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 import { passwordSchema } from '../src/modules/auth/auth.schema.js';
-const db = new PrismaClient();
+import { databaseUrl } from '../src/config/database.js';
+const db = new PrismaClient({
+  datasources: { db: { url: databaseUrl() } },
+});
 async function seed() {
   const password = passwordSchema.parse(process.env.SEED_DEMO_PASSWORD);
   if (password === 'Choose-a-local-demo-password')

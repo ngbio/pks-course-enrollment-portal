@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { z } from 'zod';
+import { databaseUrl } from './database.js';
 
 const positive = (fallback: number) =>
   z.coerce.number().int().positive().default(fallback);
@@ -23,6 +24,7 @@ const schema = z.object({
     .transform((v) => v.split(',').map((s) => s.trim()))
     .pipe(z.array(z.string().url()).min(1)),
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(0),
+  EDGE_PROXY_SECRET: z.string().min(32).max(256).optional(),
   AUTH_WINDOW_MS: positive(900000),
   LOGIN_IP_LIMIT: positive(20),
   LOGIN_ACCOUNT_LIMIT: positive(5),
@@ -30,10 +32,16 @@ const schema = z.object({
 });
 export type Config = z.infer<typeof schema>;
 export function loadConfig(): Config {
-  const result = schema.safeParse(process.env);
+  const result = schema.safeParse({
+    ...process.env,
+    DATABASE_URL: databaseUrl(),
+  });
   if (!result.success)
     throw new Error(
       `Invalid environment fields: ${result.error.issues.map((i) => i.path.join('.')).join(', ')}`,
     );
+  if (result.data.EDGE_PROXY_SECRET && result.data.TRUST_PROXY_HOPS !== 1) {
+    throw new Error('EDGE_PROXY_SECRET requires TRUST_PROXY_HOPS=1');
+  }
   return result.data;
 }
