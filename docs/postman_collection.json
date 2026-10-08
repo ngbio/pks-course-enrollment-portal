@@ -1,0 +1,1308 @@
+{
+  "info": {
+    "name": "PKS Backend - Full API verification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Run on a disposable seeded database. Set demoPassword locally. Cookie jar handles login; no token is exported. Creates 3 students and one hidden enrolled course each run."
+  },
+  "variable": [
+    {
+      "key": "runId",
+      "value": ""
+    },
+    {
+      "key": "courseId",
+      "value": ""
+    },
+    {
+      "key": "emptyCourseId",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (pm.info.requestName === 'Health') pm.collectionVariables.set('runId', pm.variables.replaceIn('{{$guid}}'));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Register Student A",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Postman Student\",\n  \"email\": \"a-{{runId}}@pks.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject duplicate email",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Postman Student\",\n  \"email\": \"a-{{runId}}@pks.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('error'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject role injection",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Postman Student\",\n  \"email\": \"injected-{{runId}}@pks.test\",\n  \"password\": \"{{demoPassword}}\",\n  \"role\": \"ADMIN\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('error'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Register Student B",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Postman Student\",\n  \"email\": \"b-{{runId}}@pks.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Register Student C",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Postman Student\",\n  \"email\": \"c-{{runId}}@pks.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@pks.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Course",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Postman Course {{runId}}\",\n  \"category\": \"API Test\",\n  \"instructor\": \"PKS Teacher\",\n  \"shortDescription\": \"Postman verification\",\n  \"description\": \"Course for repeatable API verification\",\n  \"tuitionVnd\": 100000,\n  \"capacity\": 2,\n  \"isPublished\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));",
+              "pm.collectionVariables.set('courseId', pm.response.json().data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Detail",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses/{{courseId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Course",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses/{{courseId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated Postman Course {{runId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject empty PATCH",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses/{{courseId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('error'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject count injection",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses/{{courseId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"enrolledCount\": 999\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('error'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Search",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/courses?search=Postman&category=API%20Test&page=1&limit=12"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Detail",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/courses/{{courseId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/categories"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Student A",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"a-{{runId}}@pks.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Current User",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Student forbidden admin",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('error'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Student enrolls",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/courses/{{courseId}}/enrollments",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject duplicate enrollment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/courses/{{courseId}}/enrollments",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('error'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "My Courses",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/me/enrollments"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Student B",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"b-{{runId}}@pks.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Second student enrolls",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/courses/{{courseId}}/enrollments",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Student C",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"c-{{runId}}@pks.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject full course",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/courses/{{courseId}}/enrollments",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('error'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Admin Again",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@pks.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enrollment List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses/{{courseId}}/enrollments"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject capacity below count",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses/{{courseId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"capacity\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('error'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject delete enrolled course",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses/{{courseId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('error'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hide Course",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses/{{courseId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"isPublished\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hidden public detail",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/courses/{{courseId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('error'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Empty Course",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Delete me {{runId}}\",\n  \"category\": \"API Test\",\n  \"instructor\": \"PKS Teacher\",\n  \"shortDescription\": \"Postman verification\",\n  \"description\": \"Course for repeatable API verification\",\n  \"tuitionVnd\": 100000,\n  \"capacity\": 2,\n  \"isPublished\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));",
+              "pm.collectionVariables.set('emptyCourseId', pm.response.json().data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Empty Course",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses/{{emptyCourseId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+              "pm.test('No body', () => pm.expect(pm.response.text()).to.eql(''));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Staff",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"staff@pks.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Staff List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/admin/courses"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('data'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/logout"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+              "pm.test('No body', () => pm.expect(pm.response.text()).to.eql(''));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guest rejected",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{origin}}"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+              "pm.test('Response envelope', () => pm.expect(pm.response.json()).to.have.property('error'));",
+              "pm.test('No password hash leaked', () => pm.expect(pm.response.text()).not.to.include('passwordHash'));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
